@@ -32,8 +32,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes of my app defined in db.routes.js
-
+/**
+ * All user routes and their methods
+ */
 // GET
 app.get("/show-all-users", router);
 app.get("/show-user/:id_user", router);
@@ -46,7 +47,7 @@ app.patch("/update-username", router);
 app.patch("/update-password", router);
 
 // DELETE
-app.delete("/delete-username", router);
+app.delete("/delete-user", router);
 
 // Error catch for non founded routes
 app.use((req, res, next) => {
