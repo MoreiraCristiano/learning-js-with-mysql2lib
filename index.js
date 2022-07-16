@@ -41,6 +41,12 @@ app.get("/show-user/:id_user", router);
 // POST
 app.post("/add-new-user", router);
 
+// PATCH
+app.patch("/update-username", router);
+
+// DELETE
+app.delete("/delete-username", router);
+
 // Error catch for non founded routes
 app.use((req, res, next) => {
   const error = new Error("Route not found");
