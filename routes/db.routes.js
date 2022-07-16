@@ -3,6 +3,7 @@ import { db } from "../controller/db.controller.js";
 
 const router = Router();
 const dbConnection = db.connection();
+const localhostVM = "192.168.1.4:8081";
 
 // POST's
 router.post("/add-new-user", (req, res) => {
@@ -33,7 +34,7 @@ router.get("/show-all-users", (req, res) => {
     }
 
     const query = `SELECT * FROM users;`;
-    connection.execute(query, (err, results, fields) => {
+    connection.execute(query, (err, result, fields) => {
       connection.release();
 
       if (err) {
@@ -41,7 +42,24 @@ router.get("/show-all-users", (req, res) => {
         return res.status(500).send({ err, response: null });
       }
 
-      res.status(200).send({ message: "Success", results });
+      // Documented return of api
+      const response = {
+        message: "All users returned",
+        total_of_users: result.length,
+        users: result.map((user) => {
+          return {
+            user_id: user.ID,
+            username: user.name,
+            request: {
+              type: "GET",
+              description: "Return all users in mysql db.",
+              url: `http://${localhostVM}/show-user/${user.ID}`,
+            },
+          };
+        }),
+      };
+
+      res.status(200).send(response);
     });
   });
 });
@@ -62,7 +80,26 @@ router.get("/show-user/:id_user", (req, res) => {
         return res.status(500).send({ err, response: null });
       }
 
-      res.status(200).send({ message: "Success", result });
+      if (result.length === 0) {
+        return res.status(404).send({ Message: "Not found." });
+      }
+
+      const response = {
+        message: `User founded with id ${req.params.id_user}`,
+        user: result.map((user) => {
+          return {
+            user_id: user.ID,
+            username: user.name,
+            request: {
+              type: "GET",
+              description: "Return a user by ID.",
+              url: `http://${localhostVM}/show-all-users`,
+            },
+          };
+        }),
+      };
+
+      res.status(200).send(response);
     });
   });
 });
@@ -107,13 +144,11 @@ router.delete("/delete-username", (req, res) => {
         return res.status(500).send({ err, response: null });
       }
 
-      res
-        .status(202)
-        .send({
-          message: "Username deleted!",
-          id_user: req.body.user_id,
-          results,
-        });
+      res.status(202).send({
+        message: "Username deleted!",
+        id_user: req.body.user_id,
+        results,
+      });
     });
   });
 });
