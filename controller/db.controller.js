@@ -6,7 +6,7 @@ const db = {
       host: "localhost",
       user: "root",
       password: "Cristiano*01",
-      database: "websitetest",
+      database: "js_sql",
     };
 
     const connectedSession = mysql2.createPool(dbInfo);

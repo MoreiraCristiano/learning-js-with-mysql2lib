@@ -1,7 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { router } from "./routes/db.routes.js";
+import { router } from "./routes/user.routes.js";
 
 const port = 8081;
 const app = express();
@@ -43,6 +43,7 @@ app.post("/add-new-user", router);
 
 // PATCH
 app.patch("/update-username", router);
+app.patch("/update-password", router);
 
 // DELETE
 app.delete("/delete-username", router);
