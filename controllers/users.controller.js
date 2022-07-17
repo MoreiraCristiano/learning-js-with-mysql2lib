@@ -1,8 +1,10 @@
 import { db } from "./db.controller.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
-const localhostVM = "192.168.1.4:8081";
+dotenv.config();
+const localhostVM = "192.168.1.10:8081";
 const dbConnection = db.connection();
 
 const UserController = {
@@ -214,7 +216,7 @@ const UserController = {
                 user_id: result[0].ID,
                 email: result[0].email,
               },
-              "keyquedeveserfeitaemvariaveldeambientelalala",
+              process.env.MYSQL_JWT_PRIVATE_KEY,
               {
                 expiresIn: "1h",
               }

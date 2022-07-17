@@ -4,10 +4,7 @@ export const login = {
   required: (req, res, next) => {
     try {
       const token = req.headers.authorization.split(" ")[1];
-      const decode = jwt.verify(
-        token,
-        "keyquedeveserfeitaemvariaveldeambientelalala"
-      );
+      const decode = jwt.verify(token, process.env.MYSQL_JWT_PRIVATE_KEY);
       req.user = decode;
       next();
     } catch (error) {
@@ -19,10 +16,7 @@ export const login = {
   optional: (req, res, next) => {
     try {
       const token = req.headers.authorization.split(" ")[1];
-      const decode = jwt.verify(
-        token,
-        "keyquedeveserfeitaemvariaveldeambientelalala"
-      );
+      const decode = jwt.verify(token, process.env.MYSQL_JWT_PRIVATE_KEY);
       req.user = decode;
       next();
     } catch (error) {

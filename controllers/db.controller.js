@@ -3,10 +3,10 @@ import mysql2 from "mysql2";
 const db = {
   connection: () => {
     const dbInfo = {
-      host: "localhost",
-      user: "root",
-      password: "Cristiano*01",
-      database: "js_sql",
+      host: process.env.MYSQL_HOST,
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD,
+      database: process.env.MYSQL_DB,
     };
 
     const connectedSession = mysql2.createPool(dbInfo);
@@ -14,7 +14,7 @@ const db = {
     return connectedSession;
   },
 
-  execute: (query, params = []) => {
+  execute: (query) => {
     return new Promise((resolve, reject) => {
       const connection = db.connection();
 
@@ -22,7 +22,7 @@ const db = {
         if (error) {
           reject(error);
         } else {
-          connection.query(query, params, (error, result, field) => {
+          connection.query(query, (error, result, field) => {
             connection.release();
 
             if (error) {
