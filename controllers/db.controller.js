@@ -13,6 +13,28 @@ const db = {
 
     return connectedSession;
   },
+
+  execute: (query, params = []) => {
+    return new Promise((resolve, reject) => {
+      const connection = db.connection();
+
+      connection.getConnection((error, connection) => {
+        if (error) {
+          reject(error);
+        } else {
+          connection.query(query, params, (error, result, field) => {
+            connection.release();
+
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          });
+        }
+      });
+    });
+  },
 };
 
 export { db };

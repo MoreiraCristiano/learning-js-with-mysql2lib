@@ -2,8 +2,8 @@ import { db } from "./db.controller.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const dbConnection = db.connection();
 const localhostVM = "192.168.1.4:8081";
+const dbConnection = db.connection();
 
 const UserController = {
   addNewUser: (req, res) => {
@@ -53,241 +53,182 @@ const UserController = {
     });
   },
 
-  showAllUsers: (req, res) => {
-    dbConnection.getConnection((error, connection) => {
-      if (error) {
-        return res.status(500).send({ error });
-      }
-
+  showAllUsers: async (req, res) => {
+    try {
       const query = `SELECT * FROM users;`;
-      connection.execute(query, (error, result, fields) => {
-        connection.release();
+      const result = await db.execute(query);
 
-        if (error) {
-          new Error({ message: "Something went wrong", error });
-          return res.status(500).send({ error, response: null });
-        }
-
-        // Documented return of api
-        const response = {
-          message: "All users returned",
-          total_of_users: result.length,
-          users: result.map((user) => {
-            return {
-              user_id: user.ID,
-              username: user.name,
-              hash_password: user.passwd,
-              request: {
-                type: "GET",
-                description:
-                  "To see only this specific user, use the follow endpoint.",
-                url: `http://${localhostVM}/show-user/${user.ID}`,
-              },
-            };
-          }),
-        };
-
-        res.status(200).send(response);
-      });
-    });
-  },
-
-  showUserById: (req, res) => {
-    dbConnection.getConnection((error, connection) => {
-      if (error) {
-        new Error("Something went wrong");
-        res.status(500).send({ error, response: null });
-      }
-
-      const query = `SELECT * FROM users WHERE ID = ${req.params.id_user};`;
-      connection.query(query, (error, result, fields) => {
-        connection.release();
-
-        if (error) {
-          new Error("Somenthing went wrong");
-          return res.status(500).send({ error, response: null });
-        }
-
-        if (result.length === 0) {
-          return res.status(404).send({ Message: "Not found." });
-        }
-
-        const response = {
-          message: `User found with id ${req.params.id_user}`,
-          user: {
-            user_id: result[0].ID,
-            username: result[0].name,
-            email: result[0].email,
+      // Documented return of api
+      const response = {
+        message: "All users returned",
+        total_of_users: result.length,
+        users: result.map((user) => {
+          return {
+            user_id: user.ID,
+            username: user.name,
+            email: user.email,
+            hash_password: user.passwd,
             request: {
               type: "GET",
-              description: "To see all users use the follow endpoint",
-              url: `http://${localhostVM}/show-all-users`,
+              description:
+                "To see only this specific user, use the follow endpoint.",
+              url: `http://${localhostVM}/show-user/${user.ID}`,
             },
-          },
-        };
+          };
+        }),
+      };
 
-        res.status(200).send(response);
-      });
-    });
+      res.status(200).send(response);
+    } catch (error) {
+      res.status(500).send({ error });
+    }
   },
 
-  updateUsername: (req, res) => {
-    dbConnection.getConnection((error, connection) => {
-      if (error) {
-        new Error("Something went wrong");
-        return res.status(500).send({ error, response: null });
+  showUserById: async (req, res) => {
+    try {
+      const query = `SELECT * FROM users WHERE ID = ${req.params.id_user};`;
+      const result = await db.execute(query);
+
+      if (result.length === 0) {
+        return res.status(404).send({ Message: "Not found." });
       }
-
-      const query = `UPDATE users SET name = "${req.body.new_user_name}"
-                     WHERE ID = ${req.body.user_id};`;
-
-      connection.query(query, (error, result, fields) => {
-        connection.release();
-
-        if (error) {
-          return res.status(500).send({ error, response: null });
-        }
-
-        const response = {
-          message: "Username changed!",
-          changed_user: {
-            user_id: req.body.user_id,
-            name: req.body.new_user_name,
-          },
+      const response = {
+        message: `User found with id ${req.params.id_user}`,
+        user: {
+          user_id: result[0].ID,
+          username: result[0].name,
+          email: result[0].email,
           request: {
             type: "GET",
-            description:
-              "To see only this specific user, use the follow endpoint.",
-            url: `http://${localhostVM}/show-user/${req.body.user_id}`,
+            description: "To see all users use the follow endpoint",
+            url: `http://${localhostVM}/show-all-users`,
           },
-        };
+        },
+      };
 
-        res.status(202).send(response);
-      });
-    });
+      res.status(200).send(response);
+    } catch (error) {
+      return res.status(500).send({ error, response: null });
+    }
   },
 
-  updatePassword: (req, res) => {
-    dbConnection.getConnection((error, connection) => {
-      if (error) {
-        new Error("Something went wrong");
-        return res.status(500).send({ error, response: null });
-      }
+  updateUsername: async (req, res) => {
+    try {
+      const query = `UPDATE users SET name = "${req.body.new_user_name}"
+                      WHERE ID = ${req.body.user_id};`;
+      const result = await db.execute(query);
 
+      const response = {
+        message: "Username changed!",
+        changed_user: {
+          user_id: req.body.user_id,
+          name: req.body.new_user_name,
+        },
+        request: {
+          type: "GET",
+          description:
+            "To see only this specific user, use the follow endpoint.",
+          url: `http://${localhostVM}/show-user/${req.body.user_id}`,
+        },
+      };
+      res.status(202).send(response);
+    } catch (error) {
+      return res.status(500).send({ error });
+    }
+  },
+
+  updatePassword: async (req, res) => {
+    try {
       const hashPasswd = bcrypt.hashSync(req.body.password, 10);
 
       const query = `UPDATE users SET passwd = "${hashPasswd}"
-                     WHERE ID = ${req.body.user_id};`;
+                    WHERE ID = ${req.body.user_id};`;
 
-      connection.query(query, (error, result, fields) => {
-        connection.release();
+      const result = db.execute(query);
 
-        if (error) {
-          return res.status(500).send({ error, response: null });
-        }
+      const response = {
+        message: "Password changed!",
+        changed_user: {
+          user_id: req.body.user_id,
+        },
+        request: {
+          type: "GET",
+          description:
+            "To see only this specific user, use the follow endpoint.",
+          url: `http://${localhostVM}/show-user/${req.body.user_id}`,
+        },
+      };
 
-        const response = {
-          message: "Password changed!",
-          changed_user: {
-            user_id: req.body.user_id,
-          },
-          request: {
-            type: "GET",
-            description:
-              "To see only this specific user, use the follow endpoint.",
-            url: `http://${localhostVM}/show-user/${req.body.user_id}`,
-          },
-        };
-
-        res.status(202).send(response);
-      });
-    });
+      res.status(202).send(response);
+    } catch (error) {
+      return res.status(500).send({ error, response: null });
+    }
   },
 
-  deleteUser: (req, res) => {
-    dbConnection.getConnection((error, connection) => {
-      if (error) {
-        new Error("Something went wrong");
-        return res.status(500).send({ error, response: null });
-      }
-
+  deleteUser: async (req, res) => {
+    try {
       const query = `DELETE FROM users WHERE ID = ${req.body.user_id}`;
-      connection.query(query, (error, result, fields) => {
-        connection.release();
+      const result = await db.execute(query);
 
-        if (error) {
-          new Error("Something went wrong");
-          return res.status(500).send({ error, response: null });
-        }
-
-        const response = {
-          message: "User deleted!",
-          id_user: req.body.user_id,
-          request: {
-            type: "POST",
-            description: "To insert new user use the follow endpoint.",
-            url: `${localhostVM}/add-new-user`,
-            body: {
-              username: "string",
-              email: "string",
-              password: "string",
-            },
+      const response = {
+        message: "User deleted!",
+        id_user: req.body.user_id,
+        request: {
+          type: "POST",
+          description: "To insert new user use the follow endpoint.",
+          url: `${localhostVM}/add-new-user`,
+          body: {
+            username: "string",
+            email: "string",
+            password: "string",
           },
-        };
+        },
+      };
 
-        res.status(202).send(response);
-      });
-    });
+      res.status(202).send(response);
+    } catch (error) {
+      return res.status(500).send({ error, response: null });
+    }
   },
 
-  login: (req, res) => {
-    dbConnection.getConnection((error, connection) => {
-      if (error) {
-        return res.status(500).send(error);
+  login: async (req, res) => {
+    try {
+      const query = `SELECT * FROM users WHERE email = "${req.body.email}";`;
+      const result = await db.execute(query);
+
+      if (result.length < 1) {
+        return res.status(401).send({ message: "Login fail!" });
       }
 
-      const query = `SELECT * FROM users WHERE email = "${req.body.email}";`;
-
-      connection.query(query, (error, result, fields) => {
-        connection.release();
-
-        if (error) {
-          return res.status(500).send({ error });
-        }
-
-        if (result.length < 1) {
-          return res.status(401).send({ message: "Login fail!" });
-        }
-
-        bcrypt.compare(
-          req.body.password,
-          result[0].passwd,
-          (error, hashResult) => {
-            if (error) {
-              return res.status(401).send({ message: "Login fail!" });
-            }
-            console.log(result);
-            if (hashResult) {
-              let token = jwt.sign(
-                {
-                  user_id: result[0].ID,
-                  email: result[0].email,
-                },
-                "keyquedeveserfeitaemvariaveldeambientelalala",
-                {
-                  expiresIn: "1h",
-                }
-              );
-              return res
-                .status(200)
-                .send({ message: "Login successfully.", token });
-            }
-
+      bcrypt.compare(
+        req.body.password,
+        result[0].passwd,
+        (error, hashResult) => {
+          if (error) {
             return res.status(401).send({ message: "Login fail!" });
           }
-        );
-      });
-    });
+          console.log(result);
+          if (hashResult) {
+            let token = jwt.sign(
+              {
+                user_id: result[0].ID,
+                email: result[0].email,
+              },
+              "keyquedeveserfeitaemvariaveldeambientelalala",
+              {
+                expiresIn: "1h",
+              }
+            );
+            return res
+              .status(200)
+              .send({ message: "Login successfully.", token });
+          }
+          return res.status(401).send({ message: "Login fail!" });
+        }
+      );
+    } catch (error) {
+      return res.status(500).send(error);
+    }
   },
 };
 
