@@ -1,11 +1,11 @@
-import { db } from "./db.controller.js";
+import { MySqlDatabase } from "./Db.controller.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 dotenv.config();
 const localhostVM = "192.168.1.10:8081";
-const dbConnection = db.connection();
+const dbConnection = MySqlDatabase.connection();
 
 const UserController = {
   addNewUser: (req, res) => {
@@ -58,7 +58,7 @@ const UserController = {
   showAllUsers: async (req, res) => {
     try {
       const query = `SELECT * FROM users;`;
-      const result = await db.execute(query);
+      const result = await MySqlDatabase.execute(query);
 
       // Documented return of api
       const response = {
@@ -89,7 +89,7 @@ const UserController = {
   showUserById: async (req, res) => {
     try {
       const query = `SELECT * FROM users WHERE ID = ${req.params.id_user};`;
-      const result = await db.execute(query);
+      const result = await MySqlDatabase.execute(query);
 
       if (result.length === 0) {
         return res.status(404).send({ Message: "Not found." });
@@ -118,7 +118,7 @@ const UserController = {
     try {
       const query = `UPDATE users SET name = "${req.body.new_user_name}"
                       WHERE ID = ${req.body.user_id};`;
-      const result = await db.execute(query);
+      const result = await MySqlDatabase.execute(query);
 
       const response = {
         message: "Username changed!",
@@ -146,7 +146,7 @@ const UserController = {
       const query = `UPDATE users SET passwd = "${hashPasswd}"
                     WHERE ID = ${req.body.user_id};`;
 
-      const result = db.execute(query);
+      const result = MySqlDatabase.execute(query);
 
       const response = {
         message: "Password changed!",
@@ -170,7 +170,7 @@ const UserController = {
   deleteUser: async (req, res) => {
     try {
       const query = `DELETE FROM users WHERE ID = ${req.body.user_id}`;
-      const result = await db.execute(query);
+      const result = await MySqlDatabase.execute(query);
 
       const response = {
         message: "User deleted!",
@@ -196,7 +196,7 @@ const UserController = {
   login: async (req, res) => {
     try {
       const query = `SELECT * FROM users WHERE email = "${req.body.email}";`;
-      const result = await db.execute(query);
+      const result = await MySqlDatabase.execute(query);
 
       if (result.length < 1) {
         return res.status(401).send({ message: "Login fail!" });

@@ -1,6 +1,6 @@
 import mysql2 from "mysql2";
 
-const db = {
+const MySqlDatabase = {
   connection: () => {
     const dbInfo = {
       host: process.env.MYSQL_HOST,
@@ -16,7 +16,7 @@ const db = {
 
   execute: (query) => {
     return new Promise((resolve, reject) => {
-      const connection = db.connection();
+      const connection = MySqlDatabase.connection();
 
       connection.getConnection((error, connection) => {
         if (error) {
@@ -37,4 +37,4 @@ const db = {
   },
 };
 
-export { db };
+export { MySqlDatabase };
