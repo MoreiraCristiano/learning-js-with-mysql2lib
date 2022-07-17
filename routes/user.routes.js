@@ -14,8 +14,9 @@ router.get("/show-user/:id_user", UserController.showUserById);
 
 // PATCH's
 router.patch("/update-username", UserController.updateUsername);
-router.patch("/update-password", login, UserController.updatePassword);
+router.patch("/update-password", login.required, UserController.updatePassword);
 
 // DELETE
 router.delete("/delete-user", UserController.deleteUser);
+
 export { router };
