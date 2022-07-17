@@ -41,6 +41,7 @@ app.get("/show-user/:id_user", router);
 
 // POST
 app.post("/add-new-user", router);
+app.post("/login", router);
 
 // PATCH
 app.patch("/update-username", router);

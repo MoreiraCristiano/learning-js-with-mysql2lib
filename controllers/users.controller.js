@@ -1,5 +1,6 @@
 import { db } from "./db.controller.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const dbConnection = db.connection();
 const localhostVM = "192.168.1.4:8081";
@@ -12,10 +13,10 @@ const UserController = {
       }
 
       const verificationQuery = `SELECT * FROM users WHERE email = "${req.body.email}";`;
-      connection.query(verificationQuery, (err, result, fields) => {
-        if (err) {
-          new Error({ message: "Something went wrong", err });
-          return res.status(500).send({ err });
+      connection.query(verificationQuery, (error, result, fields) => {
+        if (error) {
+          new Error({ message: "Something went wrong", error });
+          return res.status(500).send({ error });
         }
 
         if (result.length > 0) {
@@ -28,12 +29,12 @@ const UserController = {
 
             const query = `INSERT INTO users(name, email, passwd) 
                   VALUES("${req.body.username}", "${req.body.email}", "${hashPasswd}");`;
-            connection.query(query, (err, result, fields) => {
+            connection.query(query, (error, result, fields) => {
               connection.release();
 
-              if (err) {
-                new Error({ message: "Something went wrong", err });
-                return res.status(500).send({ err, response: null });
+              if (error) {
+                new Error({ message: "Something went wrong", error });
+                return res.status(500).send({ error, response: null });
               }
 
               const response = {
@@ -59,12 +60,12 @@ const UserController = {
       }
 
       const query = `SELECT * FROM users;`;
-      connection.execute(query, (err, result, fields) => {
+      connection.execute(query, (error, result, fields) => {
         connection.release();
 
-        if (err) {
-          new Error({ message: "Something went wrong", err });
-          return res.status(500).send({ err, response: null });
+        if (error) {
+          new Error({ message: "Something went wrong", error });
+          return res.status(500).send({ error, response: null });
         }
 
         // Documented return of api
@@ -95,16 +96,16 @@ const UserController = {
     dbConnection.getConnection((error, connection) => {
       if (error) {
         new Error("Something went wrong");
-        res.status(500).send({ err, response: null });
+        res.status(500).send({ error, response: null });
       }
 
       const query = `SELECT * FROM users WHERE ID = ${req.params.id_user};`;
-      connection.query(query, (err, result, fields) => {
+      connection.query(query, (error, result, fields) => {
         connection.release();
 
-        if (err) {
+        if (error) {
           new Error("Somenthing went wrong");
-          return res.status(500).send({ err, response: null });
+          return res.status(500).send({ error, response: null });
         }
 
         if (result.length === 0) {
@@ -112,7 +113,7 @@ const UserController = {
         }
 
         const response = {
-          message: `User founded with id ${req.params.id_user}`,
+          message: `User found with id ${req.params.id_user}`,
           user: {
             user_id: result[0].ID,
             username: result[0].name,
@@ -134,17 +135,17 @@ const UserController = {
     dbConnection.getConnection((error, connection) => {
       if (error) {
         new Error("Something went wrong");
-        return res.status(500).send({ err, response: null });
+        return res.status(500).send({ error, response: null });
       }
 
       const query = `UPDATE users SET name = "${req.body.new_user_name}"
                      WHERE ID = ${req.body.user_id};`;
 
-      connection.query(query, (err, result, fields) => {
+      connection.query(query, (error, result, fields) => {
         connection.release();
 
-        if (err) {
-          return res.status(500).send({ err, response: null });
+        if (error) {
+          return res.status(500).send({ error, response: null });
         }
 
         const response = {
@@ -170,7 +171,7 @@ const UserController = {
     dbConnection.getConnection((error, connection) => {
       if (error) {
         new Error("Something went wrong");
-        return res.status(500).send({ err, response: null });
+        return res.status(500).send({ error, response: null });
       }
 
       const hashPasswd = bcrypt.hashSync(req.body.password, 10);
@@ -178,11 +179,11 @@ const UserController = {
       const query = `UPDATE users SET passwd = "${hashPasswd}"
                      WHERE ID = ${req.body.user_id};`;
 
-      connection.query(query, (err, result, fields) => {
+      connection.query(query, (error, result, fields) => {
         connection.release();
 
-        if (err) {
-          return res.status(500).send({ err, response: null });
+        if (error) {
+          return res.status(500).send({ error, response: null });
         }
 
         const response = {
@@ -207,16 +208,16 @@ const UserController = {
     dbConnection.getConnection((error, connection) => {
       if (error) {
         new Error("Something went wrong");
-        return res.status(500).send({ err, response: null });
+        return res.status(500).send({ error, response: null });
       }
 
       const query = `DELETE FROM users WHERE ID = ${req.body.user_id}`;
-      connection.query(query, (err, result, fields) => {
+      connection.query(query, (error, result, fields) => {
         connection.release();
 
-        if (err) {
+        if (error) {
           new Error("Something went wrong");
-          return res.status(500).send({ err, response: null });
+          return res.status(500).send({ error, response: null });
         }
 
         const response = {
@@ -235,6 +236,56 @@ const UserController = {
         };
 
         res.status(202).send(response);
+      });
+    });
+  },
+
+  login: (req, res) => {
+    dbConnection.getConnection((error, connection) => {
+      if (error) {
+        return res.status(500).send(error);
+      }
+
+      const query = `SELECT * FROM users WHERE email = "${req.body.email}";`;
+
+      connection.query(query, (error, result, fields) => {
+        connection.release();
+
+        if (error) {
+          return res.status(500).send({ error });
+        }
+
+        if (result.length < 1) {
+          return res.status(401).send({ message: "Login fail!" });
+        }
+
+        bcrypt.compare(
+          req.body.password,
+          result[0].passwd,
+          (error, hashResult) => {
+            if (error) {
+              return res.status(401).send({ message: "Login fail!" });
+            }
+            console.log(result);
+            if (hashResult) {
+              let token = jwt.sign(
+                {
+                  user_id: result[0].ID,
+                  email: result[0].email,
+                },
+                "keyquedeveserfeitaemvariaveldeambientelalala",
+                {
+                  expiresIn: "1h",
+                }
+              );
+              return res
+                .status(200)
+                .send({ message: "Login successfully.", token });
+            }
+
+            return res.status(401).send({ message: "Login fail!" });
+          }
+        );
       });
     });
   },
